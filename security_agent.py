@@ -37,16 +37,48 @@ class SecurityAgent:
         self._last_analysis_time = 0
         self._analysis_lock = threading.Lock()
     
+    def check_blacklist(self, ip):
+        """Verifica se um IP está na blacklist
+        
+        Args:
+            ip (str): Endereço IP a ser verificado
+            
+        Returns:
+            tuple: (bool, str) - (está na blacklist, mensagem de status)
+        """
+        try:
+            # Verificar na blacklist local
+            if ip in st.session_state.blocked_ips:
+                return True, f"IP {ip} encontrado na blacklist local"
+                
+            # Aqui você pode adicionar verificações em outras blacklists
+            # Por exemplo, verificar em APIs de reputação de IP
+            
+            return False, f"IP {ip} não encontrado na blacklist"
+            
+        except Exception as e:
+            self.logger.log_activity(f"Erro ao verificar blacklist para IP {ip}: {str(e)}", "error")
+            return False, f"Erro ao verificar blacklist: {str(e)}"
+    
     def analyze_threat(self, threat_data):
         """Analisa uma ameaça detectada e toma ações apropriadas"""
         try:
             # Obter o IP da ameaça
             threat_ip = threat_data.get("ip", "desconhecido")
             
+            # Verificar se o IP está na blacklist
+            is_blacklisted, blacklist_status = self.check_blacklist(threat_ip)
+            
+            if is_blacklisted:
+                self.logger.log_activity(f"⚠️ {blacklist_status}. Ação imediata necessária.", "error")
+                # Tomar ação adicional para IPs na blacklist
+                self.block_ip(threat_ip)
+                return "BLACKLISTED"
+            
             # Verificar se o IP já está bloqueado
             if threat_ip in st.session_state.blocked_ips:
                 self.logger.log_activity(f"IP {threat_ip} já está bloqueado. Ignorando nova ameaça.", "warning")
-                return
+                return "já bloqueado"
             
             # Verificar se o IP já está em monitoramento
             if threat_ip in st.session_state.monitored_ips:

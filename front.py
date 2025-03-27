@@ -131,8 +131,15 @@ class SecurityUI:
         protocol = random.choice(["TCP", "UDP", "HTTP", "HTTPS", "DNS"])
         port = random.randint(1, 65535)
         
-        # Registra o alerta
-        log_message = f"⚠️ ATAQUE SIMULADO: {random.choice(threat_types)} de {selected_ip}:{port} via {protocol} - Risco {risk_text}"
+        # Verificar se o IP está na blacklist
+        is_blacklisted, blacklist_status = self.security_agent.check_blacklist(selected_ip)
+        
+        # Registra o alerta com informação da blacklist
+        if is_blacklisted:
+            log_message = f"⚠️ ATAQUE SIMULADO: {random.choice(threat_types)} de {selected_ip}:{port} via {protocol} - Risco {risk_text} - {blacklist_status}"
+        else:
+            log_message = f"⚠️ ATAQUE SIMULADO: {random.choice(threat_types)} de {selected_ip}:{port} via {protocol} - Risco {risk_text}"
+            
         self.logger.log_activity(log_message, log_type)
         
         # Envia para análise no security agent
@@ -195,6 +202,19 @@ class SecurityUI:
             
             # Status de monitoramento automático
             st.success("✅ Sistema de Monitoramento Ativo")
+            
+            # Campo para verificação de blacklist
+            st.subheader("🔍 Verificação de Blacklist")
+            blacklist_col1, blacklist_col2 = st.columns([3, 1])
+            with blacklist_col1:
+                check_ip = st.text_input("Endereço IP para verificar na blacklist", "192.168.1.100")
+            with blacklist_col2:
+                if st.button("Verificar Blacklist", use_container_width=True):
+                    is_blacklisted, status = self.security_agent.check_blacklist(check_ip)
+                    if is_blacklisted:
+                        st.error(f"⚠️ {status}")
+                    else:
+                        st.success(f"✅ {status}")
             
             # Campo para bloqueio personalizado
             st.subheader("🛡️ Bloqueio de IP Personalizado")
