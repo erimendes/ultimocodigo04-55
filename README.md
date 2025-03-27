@@ -1,3 +1,6 @@
+# Teve como base o projeto CISCO BRAMA
+https://github.com/oborys/security-ai-agent-brama
+
 # Agente Autônomo de Segurança Cibernética
 
 Um sistema de monitoramento de segurança cibernética com agente autônomo baseado em IA que detecta, analisa e responde a ameaças em tempo real.
